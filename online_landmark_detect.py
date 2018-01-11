@@ -33,11 +33,18 @@ def head_pose_estimate(frame, shape):
                             (225.0, 170.0, -135.0),      # Right eye right corne
                             (-150.0, -150.0, -125.0),    # Left Mouth corner
                             (150.0, -150.0, -125.0)      # Right mouth corner
-                         
+
                         ])
 
+
     focal_length = size[1]
-    center = (size[1]/2, size[0]/2)
+    center = (size[1] / 2, size[0] / 2)
+    # camera_matrix = np.array(
+    #     [[focal_length, 0, center[0]],
+    #      [0, focal_length, center[1]],
+    #      [0, 0, 1]], dtype="double"
+    # )
+
     camera_matrix = np.array(
                          [[1065.998192050825, 0.0, 650.5364868504282],
                          [0.0, 1068.49376227235, 333.59792728394547],
@@ -48,24 +55,26 @@ def head_pose_estimate(frame, shape):
     # print("Camera Matrix: \n {0}".format(camera_matrix))
 
     dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
+    #dist_coeffs = np.array(
+        #[0.05168885345466659, 0.08869302343380323, -0.011352749105937471, 0.0010267347279299176, -0.3245685548675939])
     (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 
-    #print("Rotation Vector: \n {0}".format(rotation_vector))
+    print("Rotation Vector: \n {0}".format(rotation_vector))
     params["rotation_vector"] = np.concatenate(rotation_vector, axis=0).tolist()
 
     params["euler_angles"] = {}
 
-    #print("Rotation Euler angles (Radians): \n {0}".format(rmu.rotationMatrixToEulerAngles(cv2.Rodrigues(rotation_vector)[0])))
+    print("Rotation Euler angles (Radians): \n {0}".format(rmu.rotationMatrixToEulerAngles(cv2.Rodrigues(rotation_vector)[0])))
     params["euler_angles"]["radians"] = rmu.rotationMatrixToEulerAngles(cv2.Rodrigues(rotation_vector)[0]).tolist()
 
-    #print("Rotation Euler angles (Degrees): \n {0}".format(rmu.rotationMatrixToEulerAngles(cv2.Rodrigues(rotation_vector)[0]) * (180/PI)))
+    print("Rotation Euler angles (Degrees): \n {0}".format(rmu.rotationMatrixToEulerAngles(cv2.Rodrigues(rotation_vector)[0]) * (180/PI)))
     params["euler_angles"]["degrees"] = (rmu.rotationMatrixToEulerAngles(cv2.Rodrigues(rotation_vector)[0]) * (180/PI)).tolist()
 
-    params["camera_position"] = -np.matrix(cv2.Rodrigues(rotation_vector)[0]).T * np.matrix(translation_vector)
-    print(params["camera_position"])
-
-    #print("Translation Vector: \n {0}".format(translation_vector))
+    print("Translation Vector: \n {0}".format(translation_vector))
     params["translation_vector"] = np.concatenate(rotation_vector, axis=0).tolist()
+
+    params["camera_position"] = np.matrix(cv2.Rodrigues(rotation_vector)[0]).T * np.matrix(translation_vector)
+    print("Camera Position: \n {0}".format(params["camera_position"]))
 
     # find tilt agle
     eyeXdis = shape[45][0] - shape[36][0];
@@ -165,7 +174,7 @@ def execute(count, skip_frames):
         cv2.line(frame, head_pose[0], head_pose[1], (255,0,0), 2)
 
         head_pose[2]["direction"] = final_directions
-        print(head_pose[2])
+        #print(head_pose[2])
         if client_socket is not None:
             client_socket.socket_send(
                 str.encode(str(head_pose[2])))
