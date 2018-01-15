@@ -42,6 +42,7 @@ def handle_drone_directions(img, rect):
 
         return final_directions
 
+
 def draw_lines(head_pose_data, img):
 
     # cv2.line(frame, head_pose[0], head_pose[1], (255, 0, 0), 2)
@@ -57,6 +58,7 @@ def draw_lines(head_pose_data, img):
     cv2.line(img, tuple(head_pose_data[0][1][0].astype(int)), tuple(head_pose_data[0][5][0].astype(int)), (0, 0, 255))
     cv2.line(img, tuple(head_pose_data[0][2][0].astype(int)), tuple(head_pose_data[0][6][0].astype(int)), (0, 0, 255))
     cv2.line(img, tuple(head_pose_data[0][3][0].astype(int)), tuple(head_pose_data[0][7][0].astype(int)), (0, 0, 255))
+
 
 def head_pose_estimate(frame, shape):
 
@@ -122,8 +124,10 @@ def head_pose_estimate(frame, shape):
 
     #dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
     dist_coeffs = np.array([0.15166761845099383, 0.018422099273101917, -0.037319705442136746, 0.02048992115919593, -0.2574454398381191])
-    (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
-
+    #(success, rotation_vector, translation_vector, inliers) = cv2.solvePnPRansac(model_points, image_points,
+                                                           # camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+    (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix,
+                                                                  dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 
     print("Rotation Vector: \n {0}".format(rotation_vector))
     params["rotation_vector"] = np.concatenate(rotation_vector, axis=0).tolist()
@@ -169,7 +173,7 @@ def execute(count, skip_frames):
         # have a maximum width of 800 pixels, and convert it to
         # grayscale
         frame = vs.read()
-        frame = imutils.resize(frame, height=720)
+        #frame = imutils.resize(frame, width=800)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         rects = detector(gray, 0)
